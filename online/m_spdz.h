@@ -3,6 +3,7 @@
 
 #include "spdz/network/network.h"
 #include <emp-tool/emp-tool.h>
+#include "utility.h"
 using namespace emp;
 
 // Matrix SPDZ
@@ -95,28 +96,28 @@ class MSPDZ { public:
         }
         // partially open
 		if(party != 1) {
-			io->send_data(1, d, num_mul);
+			io->send_data(1, d, sz);
 			io->flush(1);
-			io->recv_data(1, d, num_mul);
+			io->recv_data(1, d, sz);
 		} else {
 			uint64_t * tmp[nP+1];
-			for(int i = 1; i <= nP; ++i) tmp[i] = new uint64_t[num_mul];
+			for(int i = 1; i <= nP; ++i) tmp[i] = new uint64_t[sz];
 			vector<future<void>> res;
 			for(int i = 2; i <= nP; ++i) {
 				int party2 = i;
 				res.push_back(pool->enqueue([this, tmp, party2]() {
-					io->recv_data(party2, tmp[party2], num_mul);
+					io->recv_data(party2, tmp[party2], sz);
 				}));
 			}
 			joinNclean(res);
-			for(int i = 0; i < num_mul; ++i)
+			for(int i = 0; i < sz; ++i)
 				for(int j = 2; j <= nP; ++j)
 					tmp[1][i] = add_mod(tmp[1][i] , tmp[j][i]);
             d=tmp[1];
 			for(int i = 2; i <= nP; ++i) {
 				int party2 = i;
 				res.push_back(pool->enqueue([this, d, party2]() {
-					io->send_data(party2, d, num_mul);
+					io->send_data(party2, d, sz);
 					io->flush(party2);
 				}));
 			}
@@ -125,37 +126,82 @@ class MSPDZ { public:
 		}
 
         if(party != 1) {
-			io->send_data(1, e, num_mul);
+			io->send_data(1, e, sz);
 			io->flush(1);
-			io->recv_data(1, e, num_mul);
+			io->recv_data(1, e, sz);
 		} else {
 			uint64_t * tmp[nP+1];
-			for(int i = 1; i <= nP; ++i) tmp[i] = new uint64_t[num_mul];
+			for(int i = 1; i <= nP; ++i) tmp[i] = new uint64_t[sz];
 			vector<future<void>> res;
 			for(int i = 2; i <= nP; ++i) {
 				int party2 = i;
 				res.push_back(pool->enqueue([this, tmp, party2]() {
-					io->recv_data(party2, tmp[party2], num_mul);
+					io->recv_data(party2, tmp[party2], sz);
 				}));
 			}
 			joinNclean(res);
-			for(int i = 0; i < num_mul; ++i)
+			for(int i = 0; i < sz; ++i)
 				for(int j = 2; j <= nP; ++j)
 					tmp[1][i] = add_mod(tmp[1][i] , tmp[j][i]);
             e=tmp[1];
 			for(int i = 2; i <= nP; ++i) {
 				int party2 = i;
 				res.push_back(pool->enqueue([this, e, party2]() {
-					io->send_data(party2, e, num_mul);
+					io->send_data(party2, e, sz);
 					io->flush(party2);
 				}));
 			}
 			joinNclean(res);
 			for(int i = 1; i <= nP; ++i) delete[] tmp[i];
 		}
-        for(int i = 0; i < num_mul; ++i){
-            output[i] = add_mod(add_mod(c[i] , mult_mod(d[i], b[i])) , add_mod(mult_mod(a[i], e[i]) , mult_mod(d[i],e[i])));
-            output_mac[i] = add_mod(add_mod(mac_c[i] , mult_mod(d[i], mac_b[i])) , add_mod(mult_mod(mac_a[i], e[i]) , mult_mod(mult_mod(d[i],e[i]),key)));
+        uint64_t *e_t = new uint64_t[sz];
+        e_t = transform(e, mat_sz);
+        f = mat_mult_mod(e_t,a_t,mat_sz);
+        for(int i=0; i < sz ; ++i){
+            f[i]=(f[i]-r_t[i] ) % pr;
+        }
+
+        if(party != 1) {
+			io->send_data(1, f, sz);
+			io->flush(1);
+			io->recv_data(1, f, sz);
+		} else {
+			uint64_t * tmp[nP+1];
+			for(int i = 1; i <= nP; ++i) tmp[i] = new uint64_t[sz];
+			vector<future<void>> res;
+			for(int i = 2; i <= nP; ++i) {
+				int party2 = i;
+				res.push_back(pool->enqueue([this, tmp, party2]() {
+					io->recv_data(party2, tmp[party2], sz);
+				}));
+			}
+			joinNclean(res);
+			for(int i = 0; i < sz; ++i)
+				for(int j = 2; j <= nP; ++j)
+					tmp[1][i] = add_mod(tmp[1][i] , tmp[j][i]);
+            f=tmp[1];
+			for(int i = 2; i <= nP; ++i) {
+				int party2 = i;
+				res.push_back(pool->enqueue([this, f, party2]() {
+					io->send_data(party2, f, sz);
+					io->flush(party2);
+				}));
+			}
+			joinNclean(res);
+			for(int i = 1; i <= nP; ++i) delete[] tmp[i];
+		}
+        uint64_t *f_t = new uint64_t[sz];
+        uint64_t *db = new uint64_t[sz];
+        uint64_t *de = new uint64_t[sz];
+        uint64_t *mac_db = new uint64_t[mat_sz];
+        f_t = transform(f, mat_sz);
+        db = mat_mult_mod(d, b, mat_sz);
+        de = mat_mult_mod(d, e, mat_sz);
+        mac_db = mat_mult_mod(d, mac_b, mat_sz);
+
+        for(int i = 0; i < sz; ++i){
+            output[i] = mod(c[i]+db[i]+r[i]+de[i]+f_t[i]);
+            output_mac[i] = mod(mac_c[i]+mac_db[i]+mac_r[i]+mac_de[i]+f_t[i]);
         }
 	}
 	

@@ -21,6 +21,18 @@ inline uint64_t mul64(uint64_t a, uint64_t b, uint64_t *c) {
 }
 //
 #else
+inline uint64_t* transform(uint64_t* A, int matrix_sz){
+  uint64_t *A_T = new uint64_t[matrix_sz * matrix_sz];
+  for(int i=0; i < matrix_sz; ++i){
+    for(int j =0; j < matrix_sz; ++j){
+      uint64_t tmp = A[i*matrix_sz+j];
+      A_T[i*matrix_sz+j]=A[j*matrix_sz+i];
+      A_T[j*matrix_sz+i]=tmp;
+    }
+  }
+  return A_T;
+}
+
 inline uint64_t mul64(uint64_t a, uint64_t b, uint64_t *c) {
   __uint128_t aa = a;
   __uint128_t bb = b;
@@ -222,4 +234,17 @@ bool feq_recv(NetIO *io, void* in, int nbytes) {
         else return true;
 }
 */
+inline uint64_t* mat_mult_mod(uint64_t* a, uint64_t* b, int mat_sz){
+  uint64_t * res = new uint64_t[mat_sz * mat_sz];
+  for (int i = 0; i < mat_sz; ++i) {
+            for (int j = 0; j < mat_sz; ++j) {
+                for (int k = 0; k < mat_sz; ++k) {
+                    uint64_t tmp = mult_mod(a[i * mat_sz + j] , b[j * mat_sz + k]);
+                    res[i * mat_sz + k] = mult_add(res[i * mat_sz + k] + tmp);
+                }
+            }
+        } 
+  return res;
+}
+
 #endif
