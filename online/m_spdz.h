@@ -9,30 +9,30 @@ using namespace emp;
 template<int nP>
 class MSPDZ { public:
 	const static int SSP = 5;// 
-	const block MASK = makeBlock(0x0ULL, 0xFFFFFULL);
+	const uint64_t MASK = makeuint64_t(0x0ULL, 0xFFFFFULL);
 	//Offline<nP>* fpre = nullptr; //not write
-	block* mac[nP+1];
-	block key;
-	block* value[nP+1];
+	uint64_t* mac[nP+1];
+	uint64_t key;
+	uint64_t* value[nP+1];
 
     //triple
-    block* a,b,c;
+    uint64_t* a,b,c;
 
-	//block * labels;
+	//uint64_t * labels;
 	//BristolFormat * cf;
 	NetIOMP<nP> * io;
 	//int num_ands = 0, num_in;
-	int party, total_pre, ssp;
+	int party, total_pre, ssp, mat_sz;
 	ThreadPool * pool;
-	//block Delta;
+	//uint64_t Delta;
 		
-	block* (*GTM)[4][nP+1];
-	block* (*GTK)[4];
-	block* (*GTv)[4][nP+1];
-	//block* (*GT)[nP+1][4][nP+1];
-	//block * eval_labels[nP+1];
+	uint64_t* (*GTM)[4][nP+1];
+	uint64_t* (*GTK)[4];
+	uint64_t* (*GTv)[4][nP+1];
+	//uint64_t* (*GT)[nP+1][4][nP+1];
+	//uint64_t * eval_labels[nP+1];
 	PRP prp;
-	Online(NetIOMP<nP> * io[2], ThreadPool * pool, int party, bool * _delta = nullptr, int ssp = 40) {
+	Online(NetIOMP<nP> * io[2], ThreadPool * pool, int party, bool * _delta = nullptr, int ssp = 40, int mat_sz = 64) {
 		this->party = party;
 		this->io = io[0];
 		this->ssp = ssp;
@@ -43,21 +43,21 @@ class MSPDZ { public:
 		//fpre = new FpreMP<nP>(io, pool, party, _delta, ssp);
 
 		if(party == 1) {
-			GTM = new block[num_ands][4][nP+1]; //...not down
-			GTK = new block[num_ands][4][nP+1];
-			GTv = new block[num_ands][4];
-			GT = new block[num_ands][nP+1][4][nP+1];
+			GTM = new uint64_t[num_ands][4][nP+1]; //...not down
+			GTK = new uint64_t[num_ands][4][nP+1];
+			GTv = new uint64_t[num_ands][4];
+			GT = new uint64_t[num_ands][nP+1][4][nP+1];
 		}
 
-		//labels = new block[cf->num_wire];
+		//labels = new uint64_t[cf->num_wire];
 		for(int i  = 1; i <= nP; ++i) {
-			key[i] = new block[cf->num_wire];
-			mac[i] = new block[cf->num_wire];
+			key[i] = new uint64_t[cf->num_wire];
+			mac[i] = new uint64_t[cf->num_wire];
 		}
-		value = new block[cf->num_wire];
-        a = new block[];
-        b = new block[];
-        c = new block[];
+		value = new uint64_t[cf->num_wire];
+        a = new uint64_t[];
+        b = new uint64_t[];
+        c = new uint64_t[];
 	}
 	~Online() {
 		delete fpre;
@@ -78,13 +78,16 @@ class MSPDZ { public:
     // it should be implemented by offline.
     void gen_triple()
 
-	void Online_mul (block * x, block * y, block * mac_x, block * mac_y, block * output, block *output_mac, int num_mul) {
-		block *d = new block[num_mul];
-        block *e = new block[num_mul];
-        block *mac_d = new block[num_mul];
-        block *mac_e = new block[num_mul];
+	void Online_mul (uint64_t * x, uint64_t * y, uint64_t * mac_x, uint64_t * mac_y, uint64_t * output, uint64_t *output_mac) {
+        int sz = mat_sz * mat_sz;
+		uint64_t *d = new uint64_t[sz];
+        uint64_t *e = new uint64_t[sz];
+        uint64_t *f = new uint64_t[sz];
+        uint64_t *mac_d = new uint64_t[sz];
+        uint64_t *mac_e = new uint64_t[sz];
+        uint64_t *mac_f = new uint64_t[sz];
 
-        for(int i=0; i<num_mul; ++i) {
+        for(int i=0; i<sz; ++i) {
             d[i]=x[i]-a[i];
             e[i]=y[i]-b[i];
             mac_d[i]=mac_x[i]-mac_a[i];
@@ -96,8 +99,8 @@ class MSPDZ { public:
 			io->flush(1);
 			io->recv_data(1, d, num_mul);
 		} else {
-			block * tmp[nP+1];
-			for(int i = 1; i <= nP; ++i) tmp[i] = new block[num_mul];
+			uint64_t * tmp[nP+1];
+			for(int i = 1; i <= nP; ++i) tmp[i] = new uint64_t[num_mul];
 			vector<future<void>> res;
 			for(int i = 2; i <= nP; ++i) {
 				int party2 = i;
@@ -126,8 +129,8 @@ class MSPDZ { public:
 			io->flush(1);
 			io->recv_data(1, e, num_mul);
 		} else {
-			block * tmp[nP+1];
-			for(int i = 1; i <= nP; ++i) tmp[i] = new block[num_mul];
+			uint64_t * tmp[nP+1];
+			for(int i = 1; i <= nP; ++i) tmp[i] = new uint64_t[num_mul];
 			vector<future<void>> res;
 			for(int i = 2; i <= nP; ++i) {
 				int party2 = i;
@@ -156,14 +159,14 @@ class MSPDZ { public:
         }
 	}
 	
-    void mac_check(block * x, block * mac_x, int size){
+    void mac_check(uint64_t * x, uint64_t * mac_x, int size){
         if(party != 1) {
 			io->send_data(1, x, size);
 			io->flush(1);
 			io->recv_data(1, x, size);
 		} else {
-			block * tmp[nP+1];
-			for(int i = 1; i <= nP; ++i) tmp[i] = new block[size];
+			uint64_t * tmp[nP+1];
+			for(int i = 1; i <= nP; ++i) tmp[i] = new uint64_t[size];
 			vector<future<void>> res;
 			for(int i = 2; i <= nP; ++i) {
 				int party2 = i;
@@ -186,7 +189,7 @@ class MSPDZ { public:
 			joinNclean(res);
 			for(int i = 1; i <= nP; ++i) delete[] tmp[i];
 		}
-        block * sigma_x = new block *[size];
+        uint64_t * sigma_x = new uint64_t *[size];
         for(int i = 0; i < size; ++i) {
             sigma_x[i] = mac_x[i] - mult_mod(x[i], key);
         }
@@ -194,8 +197,8 @@ class MSPDZ { public:
 			io->send_data(1, sigma_x, size);
 			io->flush(1);
 		} else {
-			block * tmp[nP+1];
-			for(int i = 1; i <= nP; ++i) tmp[i] = new block[size];
+			uint64_t * tmp[nP+1];
+			for(int i = 1; i <= nP; ++i) tmp[i] = new uint64_t[size];
 			vector<future<void>> res;
 			for(int i = 2; i <= nP; ++i) {
 				int party2 = i;
