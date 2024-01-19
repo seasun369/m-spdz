@@ -194,10 +194,12 @@ class MSPDZ { public:
         uint64_t *db = new uint64_t[sz];
         uint64_t *de = new uint64_t[sz];
         uint64_t *mac_db = new uint64_t[mat_sz];
+        uint64_t *mac_de = new uint64_t[mat_sz];
         f_t = transform(f, mat_sz);
         db = mat_mult_mod(d, b, mat_sz);
         de = mat_mult_mod(d, e, mat_sz);
-        mac_db = mat_mult_mod(d, mac_b, mat_sz);
+        mac_db = mat_vec_mult(d, mac_b, mat_sz);
+        mac_de = mat_vec_mult(de, key, mat_sz);
 
         for(int i = 0; i < sz; ++i){
             output[i] = mod(c[i]+db[i]+r[i]+de[i]+f_t[i]);
@@ -205,7 +207,8 @@ class MSPDZ { public:
         }
 	}
 	
-    void mac_check(uint64_t * x, uint64_t * mac_x, int size){
+    void mac_check(uint64_t * x, uint64_t * mac_x){
+        int size = mat_sz * mat_sz;
         if(party != 1) {
 			io->send_data(1, x, size);
 			io->flush(1);
@@ -235,25 +238,26 @@ class MSPDZ { public:
 			joinNclean(res);
 			for(int i = 1; i <= nP; ++i) delete[] tmp[i];
 		}
-        uint64_t * sigma_x = new uint64_t *[size];
-        for(int i = 0; i < size; ++i) {
-            sigma_x[i] = mac_x[i] - mult_mod(x[i], key);
+        uint64_t * sigma_x = new uint64_t *[mat_sz];
+        sigma_x = mat_vec_mult(x,key,mat_sz);
+        for(int i = 0; i < mat_sz; ++i) {
+            sigma_x[i] = mod(mac_x[i] - sigma_x[i]);
         }
         if(party != 1) {
-			io->send_data(1, sigma_x, size);
+			io->send_data(1, sigma_x, mat_sz);
 			io->flush(1);
 		} else {
 			uint64_t * tmp[nP+1];
-			for(int i = 1; i <= nP; ++i) tmp[i] = new uint64_t[size];
+			for(int i = 1; i <= nP; ++i) tmp[i] = new uint64_t[mat_sz];
 			vector<future<void>> res;
 			for(int i = 2; i <= nP; ++i) {
 				int party2 = i;
 				res.push_back(pool->enqueue([this, tmp, party2]() {
-					io->recv_data(party2, tmp[party2], size);
+					io->recv_data(party2, tmp[party2], mat_sz);
 				}));
 			}
 			joinNclean(res);
-			for(int i = 0; i < size; ++i){
+			for(int i = 0; i < mat_sz; ++i){
 				for(int j = 2; j <= nP; ++j)
 					tmp[1][i] = add_mod(tmp[1][i] , tmp[j][i]);
                 if(tmp[1][i] != 0) cout <<"check error"<<endl; // problem?

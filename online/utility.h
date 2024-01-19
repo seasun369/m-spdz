@@ -247,4 +247,15 @@ inline uint64_t* mat_mult_mod(uint64_t* a, uint64_t* b, int mat_sz){
   return res;
 }
 
+inline uint64_t* mat_vec_mult(uint64_t* a, uint64_t* b, int mat_sz){
+  uint64_t * res = new uint64_t[mat_sz];
+  for (int i = 0; i < mat_sz; ++i) {
+            for (int j = 0; j < mat_sz; ++j) {  
+              uint64_t tmp = mult_mod(a[i * mat_sz + j] , b[j]);
+              res[i] = mult_add(res[i] + tmp);
+            }
+        } 
+  return res;
+}
+
 #endif
