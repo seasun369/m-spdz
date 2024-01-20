@@ -8,15 +8,15 @@ using namespace emp;
 // base SPDZ protocol with scalar elements
 template<int nP>
 class SPDZ { public:
-	const static int SSP = 5;// 
+	//const static int SSP = 5; 
 	const block MASK = makeBlock(0x0ULL, 0xFFFFFULL);
 	//Offline<nP>* fpre = nullptr; //not write
-	__uint64_t* mac[nP+1];
-	__uint64_t key;
-	__uint64_t* value[nP+1];
+	//uint64_t* mac[nP+1];
+	uint64_t key;
+	//uint64_t* value[nP+1];
 
     //triple
-    __uint64_t* a,b,c;
+    uint64_t* a,b,c;
 
 	//block * labels;
 	//BristolFormat * cf;
@@ -26,10 +26,10 @@ class SPDZ { public:
 	ThreadPool * pool;
 	//block Delta;
 		
-	__uint64_t* (*GTM)[4][nP+1];
-	__uint64_t* (*GTK)[4];
-	__uint64_t* (*GTv)[4][nP+1];
-	//__uint64_t* (*GT)[nP+1][4][nP+1];
+	//uint64_t* (*GTM)[4][nP+1];
+	//uint64_t* (*GTK)[4];
+	//uint64_t* (*GTv)[4][nP+1];
+	//uint64_t* (*GT)[nP+1][4][nP+1];
 	//block * eval_labels[nP+1];
 	PRP prp;
 	Online(NetIOMP<nP> * io[2], ThreadPool * pool, int party, bool * _delta = nullptr, int ssp = 40) {
@@ -43,21 +43,21 @@ class SPDZ { public:
 		//fpre = new FpreMP<nP>(io, pool, party, _delta, ssp);
 
 		if(party == 1) {
-			GTM = new __uint64_t[num_ands][4][nP+1]; //...not down
-			GTK = new __uint64_t[num_ands][4][nP+1];
-			GTv = new __uint64_t[num_ands][4];
-			GT = new __uint64_t[num_ands][nP+1][4][nP+1];
+			GTM = new uint64_t[num_ands][4][nP+1]; //...not down
+			GTK = new uint64_t[num_ands][4][nP+1];
+			GTv = new uint64_t[num_ands][4];
+			GT = new uint64_t[num_ands][nP+1][4][nP+1];
 		}
 
 		//labels = new block[cf->num_wire];
 		for(int i  = 1; i <= nP; ++i) {
-			key[i] = new __uint64_t[cf->num_wire];
-			mac[i] = new __uint64_t[cf->num_wire];
+			key[i] = new uint64_t[cf->num_wire];
+			mac[i] = new uint64_t[cf->num_wire];
 		}
-		value = new __uint64_t[cf->num_wire];
-        a = new __uint64_t[];
-        b = new __uint64_t[];
-        c = new __uint64_t[];
+		value = new uint64_t[cf->num_wire];
+        a = new uint64_t[];
+        b = new uint64_t[];
+        c = new uint64_t[];
 	}
 	~Online() {
 		delete fpre;
@@ -78,11 +78,11 @@ class SPDZ { public:
     // it should be implemented by offline.
     void gen_triple()
 
-	void Online_mul (__uint64_t * x, __uint64_t * y, __uint64_t * mac_x, __uint64_t * mac_y, __uint64_t * output, __uint64_t *output_mac, int num_mul) {
-		__uint64_t *d = new __uint64_t[num_mul];
-        __uint64_t *e = new __uint64_t[num_mul];
-        __uint64_t *mac_d = new __uint64_t[num_mul];
-        __uint64_t *mac_e = new __uint64_t[num_mul];
+	void Online_mul (uint64_t * x, uint64_t * y, uint64_t * mac_x, uint64_t * mac_y, uint64_t * output, uint64_t *output_mac, int num_mul) {
+		uint64_t *d = new uint64_t[num_mul];
+        uint64_t *e = new uint64_t[num_mul];
+        uint64_t *mac_d = new uint64_t[num_mul];
+        uint64_t *mac_e = new uint64_t[num_mul];
 
         for(int i=0; i<num_mul; ++i) {
             d[i]=x[i]-a[i];
@@ -96,8 +96,8 @@ class SPDZ { public:
 			io->flush(1);
 			io->recv_data(1, d, num_mul);
 		} else {
-			__uint64_t * tmp[nP+1];
-			for(int i = 1; i <= nP; ++i) tmp[i] = new __uint64_t[num_mul];
+			uint64_t * tmp[nP+1];
+			for(int i = 1; i <= nP; ++i) tmp[i] = new uint64_t[num_mul];
 			vector<future<void>> res;
 			for(int i = 2; i <= nP; ++i) {
 				int party2 = i;
@@ -126,8 +126,8 @@ class SPDZ { public:
 			io->flush(1);
 			io->recv_data(1, e, num_mul);
 		} else {
-			__uint64_t * tmp[nP+1];
-			for(int i = 1; i <= nP; ++i) tmp[i] = new __uint64_t[num_mul];
+			uint64_t * tmp[nP+1];
+			for(int i = 1; i <= nP; ++i) tmp[i] = new uint64_t[num_mul];
 			vector<future<void>> res;
 			for(int i = 2; i <= nP; ++i) {
 				int party2 = i;
@@ -156,14 +156,14 @@ class SPDZ { public:
         }
 	}
 	
-    void mac_check(__uint64_t * x, __uint64_t * mac_x, int size){
+    void mac_check(uint64_t * x, uint64_t * mac_x, int size){
         if(party != 1) {
 			io->send_data(1, x, size);
 			io->flush(1);
 			io->recv_data(1, x, size);
 		} else {
-			__uint64_t * tmp[nP+1];
-			for(int i = 1; i <= nP; ++i) tmp[i] = new __uint64_t[size];
+			uint64_t * tmp[nP+1];
+			for(int i = 1; i <= nP; ++i) tmp[i] = new uint64_t[size];
 			vector<future<void>> res;
 			for(int i = 2; i <= nP; ++i) {
 				int party2 = i;
@@ -186,7 +186,7 @@ class SPDZ { public:
 			joinNclean(res);
 			for(int i = 1; i <= nP; ++i) delete[] tmp[i];
 		}
-        __uint64_t * sigma_x = new __uint64_t *[size];
+        uint64_t * sigma_x = new uint64_t *[size];
         for(int i = 0; i < size; ++i) {
             sigma_x[i] = mac_x[i] - mult_mod(x[i], key);
         }
@@ -194,8 +194,8 @@ class SPDZ { public:
 			io->send_data(1, sigma_x, size);
 			io->flush(1);
 		} else {
-			__uint64_t * tmp[nP+1];
-			for(int i = 1; i <= nP; ++i) tmp[i] = new __uint64_t[size];
+			uint64_t * tmp[nP+1];
+			for(int i = 1; i <= nP; ++i) tmp[i] = new uint64_t[size];
 			vector<future<void>> res;
 			for(int i = 2; i <= nP; ++i) {
 				int party2 = i;

@@ -8,18 +8,6 @@ using namespace std;
 int party, port;
 int matrix_sz=128;
 
-__uint128_t* transform(__uint128_t* A){
-  __uint128_t *A_T;
-  for(int i=0; i < matrix_sz; ++i){
-    for(int j =0; j < matrix_sz; ++j){
-      __uint128_t tmp = A[i*matrix_sz+j];
-      A_T[i*matrix_sz+j]=A[j*matrix_sz+i];
-      A_T[j*matrix_sz+i]=tmp;
-    }
-  }
-  return A_T;
-}
-
 void test_online_mul(NetIO *io, int party) {
     
   Online<NetIO> *online;
