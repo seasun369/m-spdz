@@ -26,7 +26,11 @@ Haven't started writing yet
 
 ## online
 spdz.h cantains the basic spdz protocol
+
 m-spdz.h is the protocol designed in the [paper](https://eprint.iacr.org/2023/1912/.)
 
 ## test 
 just mult test, haven't finished yet
+
+## pre_data
+测试数据，尝试用mp-spdz生成中
