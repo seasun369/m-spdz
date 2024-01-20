@@ -17,11 +17,13 @@ class SPDZ { public:
 
     //triple
     uint64_t* a,b,c;
+	uint64_t* mac_a,mac_b,mac_c;
 
 	//block * labels;
 	//BristolFormat * cf;
 	NetIOMP<nP> * io;
 	//int num_ands = 0, num_in;
+	int num_mul=64;
 	int party, total_pre, ssp;
 	ThreadPool * pool;
 	//block Delta;
@@ -32,7 +34,7 @@ class SPDZ { public:
 	//uint64_t* (*GT)[nP+1][4][nP+1];
 	//block * eval_labels[nP+1];
 	PRP prp;
-	Online(NetIOMP<nP> * io[2], ThreadPool * pool, int party, bool * _delta = nullptr, int ssp = 40) {
+	SPDZ (NetIOMP<nP> * io[2], ThreadPool * pool, int party, bool * _delta = nullptr, int ssp = 40) {
 		this->party = party;
 		this->io = io[0];
 		this->ssp = ssp;
@@ -42,41 +44,27 @@ class SPDZ { public:
 		//total_pre = num_in + num_ands + 3*ssp;
 		//fpre = new FpreMP<nP>(io, pool, party, _delta, ssp);
 
-		if(party == 1) {
-			GTM = new uint64_t[num_ands][4][nP+1]; //...not down
-			GTK = new uint64_t[num_ands][4][nP+1];
-			GTv = new uint64_t[num_ands][4];
-			GT = new uint64_t[num_ands][nP+1][4][nP+1];
-		}
-
-		//labels = new block[cf->num_wire];
-		for(int i  = 1; i <= nP; ++i) {
-			key[i] = new uint64_t[cf->num_wire];
-			mac[i] = new uint64_t[cf->num_wire];
-		}
-		value = new uint64_t[cf->num_wire];
-        a = new uint64_t[];
-        b = new uint64_t[];
-        c = new uint64_t[];
+        a = new uint64_t[num_mul];
+        b = new uint64_t[num_mul];
+        c = new uint64_t[num_mul];
+		mac_a = new uint64_t[num_mul];
+        mac_b = new uint64_t[num_mul];
+        mac_c = new uint64_t[num_mul];
 	}
-	~Online() {
-		delete fpre;
-		if(party == 1) {
-			delete[] GTM;
-			delete[] GTK;
-			delete[] GTv;
-			delete[] GT;
-		}
-		for(int i = 1; i <= nP; ++i) {
-			delete[] key[i];
-			delete[] mac[i];
-		}
-		delete[] value;
+	~SPDZ () {
+		delete[] a;
+		delete[] b;
+		delete[] c;
+		delete[] mac_a;
+		delete[] mac_b;
+		delete[] mac_c;
 	}
 	PRG prg;
 
     // it should be implemented by offline.
-    void gen_triple()
+    void gen_triple(){
+		
+	}
 
 	void Online_mul (uint64_t * x, uint64_t * y, uint64_t * mac_x, uint64_t * mac_y, uint64_t * output, uint64_t *output_mac, int num_mul) {
 		uint64_t *d = new uint64_t[num_mul];
