@@ -1,6 +1,15 @@
 #ifndef FP_UTILITY_H__
 #define FP_UTILITY_H__
 #include <emp-tool/emp-tool.h>
+#include<iostream>
+#include<fstream>
+#include<string>
+#include<vector>
+#include <sstream>
+struct triple{
+    std::string party;
+    std::vector<uint64_t> value;
+};
 using namespace emp;
 using namespace std;
 

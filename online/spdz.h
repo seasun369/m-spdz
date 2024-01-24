@@ -63,7 +63,33 @@ class SPDZ { public:
 
     // it should be implemented by offline.
     void gen_triple(){
-		
+		std::ifstream fin;
+		fin.open("/home/seasun/spdz/pre_data/triple_a.txt",std::ios::in);
+		if(!fin.is_open())
+		{
+		    std::cerr<<"cannot open the file";
+		}
+		char line[1024]={0};
+		std::vector<triple> Triple;
+		//从文件中提取“行”
+		while(fin.getline(line,sizeof(line)))
+		{
+		    //定义局部变量
+		    triple t;
+		    //从“行”中提取“单词”
+		    std::stringstream word(line);
+		    word>>t.party;
+		    uint64_t num;
+		    while(word>>num)
+		        t.value.push_back(num);
+		    Triple.push_back(t);
+		}
+		for(int i=0; i< nP; i++){
+			if(party == stoi(Triple[i].party)){
+				a[0] = Triple[i].value[0];
+				mac_a[0] = Triple[i].value[1];
+			}
+		}
 	}
 
 	void Online_mul (uint64_t * x, uint64_t * y, uint64_t * mac_x, uint64_t * mac_y, uint64_t * output, uint64_t *output_mac, int num_mul) {
