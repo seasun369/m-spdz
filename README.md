@@ -30,7 +30,13 @@ spdz.h cantains the basic spdz protocol
 m-spdz.h is the protocol designed in the [paper](https://eprint.iacr.org/2023/1912/.)
 
 ## test 
-just mult test, haven't finished yet
+已实现线上测试
+> g++ test/mul.cpp -o mul
+
+打开三个线程，分别执行
+> ./mul 1 12345
+> ./mul 2 12345
+> ./mul 3 12345
 
 ## pre_data
 测试数据，尝试用mp-spdz生成中

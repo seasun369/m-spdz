@@ -1,8 +1,8 @@
-//one element mul test
+//matrix mul test
 #include "emp-tool/emp-tool.h"
 #include "emp-ot/emp-ot.h"
 #include "../network/network.h"
-#include "../online/spdz.h"
+#include "../online/m_spdz.h"
 
 using namespace emp;
 using namespace std;
@@ -18,13 +18,14 @@ int main(int argc, char **argv) {
 	ThreadPool pool(4);	
 
   uint64_t *x, *y, *mac_x, *mac_y, *output, *output_mac;
-  int num_mul=1;
-  x = new uint64_t[num_mul];
-  mac_x = new uint64_t[num_mul];
-  y = new uint64_t[num_mul];
-  mac_y = new uint64_t[num_mul];
-  output = new uint64_t[num_mul];
-  output_mac = new uint64_t[num_mul];
+  int mat_sz=2;
+  int sz = mat_sz * mat_sz;
+  x = new uint64_t[mat_sz];
+  mac_x = new uint64_t[mat_sz];
+  y = new uint64_t[mat_sz];
+  mac_y = new uint64_t[mat_sz];
+  output = new uint64_t[mat_sz];
+  output_mac = new uint64_t[mat_sz];
 
   std::ifstream fin1,fin2;
 	fin1.open("/home/seasun/spdz/pre_data/input_x.txt",std::ios::in);
@@ -72,11 +73,11 @@ int main(int argc, char **argv) {
 		}
 
   std::cout << std::endl
-            << "------------ BASE MUL ------------" << std::endl
+            << "------------ MATRIX MUL ------------" << std::endl
             << std::endl;
   ;
 
-  SPDZ<nP>* mpc = new SPDZ<nP>(ios, &pool, party);
+  MSPDZ<nP>* mpc = new MSPDZ<nP>(ios, &pool, party);
   cout <<"Setup:\t"<<party<<"\n";
 
   mpc->get_triple();
@@ -84,7 +85,7 @@ int main(int argc, char **argv) {
   auto start = clock_start();
   mpc->Online_mul(x,y,mac_x,mac_y,output,output_mac);
   mpc->mac_check(output,output_mac);
-  std::cout << "BASE MUL: " << time_from(start) * 1000
+  std::cout << "MATRIX MUL: " << time_from(start) * 1000
                 << " ns" << std::endl;
 
   delete mpc;

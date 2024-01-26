@@ -9,31 +9,29 @@ using namespace emp;
 // Matrix SPDZ
 template<int nP>
 class MSPDZ { public:
-	const static int SSP = 5;// 
+	//const static int SSP = 5;
 	const uint64_t MASK = makeuint64_t(0x0ULL, 0xFFFFFULL);
 	//Offline<nP>* fpre = nullptr; //not write
-	uint64_t* mac[nP+1];
-	uint64_t key;
-	uint64_t* value[nP+1];
+	//uint64_t* mac[nP+1];
+	uint64_t* key;
+	//uint64_t* value[nP+1];
 
     //triple
-    uint64_t* a,b,c;
+    uint64_t *a,*b,*c,*r,*a_t,r_t;
+	uint64_t *mac_a,*mac_b,*mac_c,*mac_a_t,*mac_r,mac_r_t;
 
 	//uint64_t * labels;
 	//BristolFormat * cf;
 	NetIOMP<nP> * io;
 	//int num_ands = 0, num_in;
-	int party, total_pre, ssp, mat_sz;
+	int party, total_pre, ssp;
+	int mat_sz=2;
+	int sz = mat_sz * mat_sz;
 	ThreadPool * pool;
 	//uint64_t Delta;
 		
-	uint64_t* (*GTM)[4][nP+1];
-	uint64_t* (*GTK)[4];
-	uint64_t* (*GTv)[4][nP+1];
-	//uint64_t* (*GT)[nP+1][4][nP+1];
-	//uint64_t * eval_labels[nP+1];
 	PRP prp;
-	Online(NetIOMP<nP> * io[2], ThreadPool * pool, int party, bool * _delta = nullptr, int ssp = 40, int mat_sz = 64) {
+	MSPDZ(NetIOMP<nP> * io[2], ThreadPool * pool, int party, bool * _delta = nullptr, int ssp = 40) {
 		this->party = party;
 		this->io = io[0];
 		this->ssp = ssp;
@@ -43,44 +41,47 @@ class MSPDZ { public:
 		//total_pre = num_in + num_ands + 3*ssp;
 		//fpre = new FpreMP<nP>(io, pool, party, _delta, ssp);
 
-		if(party == 1) {
-			GTM = new uint64_t[num_ands][4][nP+1]; //...not down
-			GTK = new uint64_t[num_ands][4][nP+1];
-			GTv = new uint64_t[num_ands][4];
-			GT = new uint64_t[num_ands][nP+1][4][nP+1];
-		}
+        a = new uint64_t[sz];
+        b = new uint64_t[sz];
+        c = new uint64_t[sz];
+		a_t = new uint64_t[sz];
+        r = new uint64_t[sz];
+        r_t = new uint64_t[sz];
 
-		//labels = new uint64_t[cf->num_wire];
-		for(int i  = 1; i <= nP; ++i) {
-			key[i] = new uint64_t[cf->num_wire];
-			mac[i] = new uint64_t[cf->num_wire];
-		}
-		value = new uint64_t[cf->num_wire];
-        a = new uint64_t[];
-        b = new uint64_t[];
-        c = new uint64_t[];
+		mac_a = new uint64_t[mat_sz];
+        mac_b = new uint64_t[mat_sz];
+        mac_c = new uint64_t[mat_sz];
+		mac_a_t = new uint64_t[mat_sz];
+        mac_r = new uint64_t[mat_sz];
+        mac_r_t = new uint64_t[mat_sz]; //haven't used when test
+
+		key = new uint64_t[mat_sz];
+
+		if(party == 1) key = {7,2};
+		if(party == 2) key = {13,5};
+		if(party == 3) key = {17,9};
+
 	}
-	~Online() {
-		delete fpre;
-		if(party == 1) {
-			delete[] GTM;
-			delete[] GTK;
-			delete[] GTv;
-			delete[] GT;
-		}
-		for(int i = 1; i <= nP; ++i) {
-			delete[] key[i];
-			delete[] mac[i];
-		}
-		delete[] value;
+	~MSPDZ() {
+		delete[] a;
+		delete[] b;
+		delete[] c;
+		delete[] a_t;
+		delete[] r;
+		delete[] r_t;
+		delete[] mac_a;
+		delete[] mac_b;
+		delete[] mac_c;
+		delete[] mac_a_t;
+		delete[] mac_r;
+		delete[] mac_r_t;
 	}
 	PRG prg;
 
     // it should be implemented by offline.
     void gen_triple()
 
-	void Online_mul (uint64_t * x, uint64_t * y, uint64_t * mac_x, uint64_t * mac_y, uint64_t * output, uint64_t *output_mac) {
-        int sz = mat_sz * mat_sz;
+	void Online_mul(uint64_t * x, uint64_t * y, uint64_t * mac_x, uint64_t * mac_y, uint64_t * output, uint64_t *output_mac) {
 		uint64_t *d = new uint64_t[sz];
         uint64_t *e = new uint64_t[sz];
         uint64_t *f = new uint64_t[sz];
@@ -200,10 +201,11 @@ class MSPDZ { public:
         de = mat_mult_mod(d, e, mat_sz);
         mac_db = mat_vec_mult(d, mac_b, mat_sz);
         mac_de = mat_vec_mult(de, key, mat_sz);
+		mac_f_t = mat_vec_mult(f_t, key, mat_sz);
 
         for(int i = 0; i < sz; ++i){
             output[i] = mod(c[i]+db[i]+r[i]+de[i]+f_t[i]);
-            output_mac[i] = mod(mac_c[i]+mac_db[i]+mac_r[i]+mac_de[i]+f_t[i]);
+            output_mac[i] = mod(mac_c[i]+mac_db[i]+mac_r[i]+mac_de[i]+mac_f_t[i]);
         }
 	}
 	
@@ -266,3 +268,4 @@ class MSPDZ { public:
 		}
     }
 };
+#endif// MSPDZ_H__
