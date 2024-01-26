@@ -22,7 +22,7 @@ This program is implemented based on emp-tool. The following is an introduction 
 ## network
 
 ## offline 
-Haven't started writing yet
+writing......
 
 ## online
 spdz.h cantains the basic spdz protocol
@@ -38,5 +38,10 @@ m-spdz.h is the protocol designed in the [paper](https://eprint.iacr.org/2023/19
 > ./mul 2 12345
 > ./mul 3 12345
 
+对于矩阵乘法测试 类似
+
+由于预处理数据是自己随机写的，所以check error
+
+矩阵乘法时间快了0.9m倍。
 ## pre_data
-测试数据，尝试用mp-spdz生成中
+测试数据，尝试用mp-spdz生成中(一直报错)

@@ -1,7 +1,7 @@
 #ifndef MSPDZ_H__
 #define MSPDZ_H__
 
-#include "spdz/network/network.h"
+#include "../network/network.h"
 #include <emp-tool/emp-tool.h>
 #include "utility.h"
 using namespace emp;
@@ -10,15 +10,15 @@ using namespace emp;
 template<int nP>
 class MSPDZ { public:
 	//const static int SSP = 5;
-	const uint64_t MASK = makeuint64_t(0x0ULL, 0xFFFFFULL);
+	//const uint64_t MASK = makeuint64_t(0x0ULL, 0xFFFFFULL);
 	//Offline<nP>* fpre = nullptr; //not write
 	//uint64_t* mac[nP+1];
 	uint64_t* key;
 	//uint64_t* value[nP+1];
 
     //triple
-    uint64_t *a,*b,*c,*r,*a_t,r_t;
-	uint64_t *mac_a,*mac_b,*mac_c,*mac_a_t,*mac_r,mac_r_t;
+    uint64_t *a,*b,*c,*r,*a_t,*r_t;
+	uint64_t *mac_a,*mac_b,*mac_c,*mac_a_t,*mac_r,*mac_r_t;
 
 	//uint64_t * labels;
 	//BristolFormat * cf;
@@ -55,11 +55,13 @@ class MSPDZ { public:
         mac_r = new uint64_t[mat_sz];
         mac_r_t = new uint64_t[mat_sz]; //haven't used when test
 
-		key = new uint64_t[mat_sz];
+		key = new uint64_t[2];
 
-		if(party == 1) key = {7,2};
-		if(party == 2) key = {13,5};
-		if(party == 3) key = {17,9};
+		uint64_t test[3][2]={{7,2},{13,5},{17,9}};
+
+		if(party == 1) memcpy(key,test[0],sizeof(key));
+		if(party == 2) memcpy(key,test[1],sizeof(key));
+		if(party == 3) memcpy(key,test[2],sizeof(key));
 
 	}
 	~MSPDZ() {
@@ -79,7 +81,294 @@ class MSPDZ { public:
 	PRG prg;
 
     // it should be implemented by offline.
-    void gen_triple()
+    void get_triple(){
+		std::ifstream fin1,fin2,fin3,fin4,fin5,fin6;
+		std::ifstream fin_1,fin_2,fin_3,fin_4,fin_5,fin_6;
+		fin1.open("/home/seasun/spdz/pre_data/sextuple/a.txt",std::ios::in);
+		fin2.open("/home/seasun/spdz/pre_data/sextuple/b.txt",std::ios::in);
+		fin3.open("/home/seasun/spdz/pre_data/sextuple/c.txt",std::ios::in);
+		fin4.open("/home/seasun/spdz/pre_data/sextuple/a_t.txt",std::ios::in);
+		fin5.open("/home/seasun/spdz/pre_data/sextuple/r.txt",std::ios::in);
+		fin6.open("/home/seasun/spdz/pre_data/sextuple/r_t.txt",std::ios::in);
+
+		fin_1.open("/home/seasun/spdz/pre_data/sextuple/mac_a.txt",std::ios::in);
+		fin_2.open("/home/seasun/spdz/pre_data/sextuple/mac_b.txt",std::ios::in);
+		fin_3.open("/home/seasun/spdz/pre_data/sextuple/mac_c.txt",std::ios::in);
+		fin_4.open("/home/seasun/spdz/pre_data/sextuple/mac_a_t.txt",std::ios::in);
+		fin_5.open("/home/seasun/spdz/pre_data/sextuple/mac_r.txt",std::ios::in);
+		fin_6.open("/home/seasun/spdz/pre_data/sextuple/mac_r_t.txt",std::ios::in);
+
+		if(!(fin1.is_open() && fin2.is_open() && fin3.is_open()))
+		{
+		    std::cerr<<"cannot open the file";
+		}
+		char line[1024]={0};
+		std::vector<triple> Triple;
+		//从文件中提取“行”
+		while(fin1.getline(line,sizeof(line)))
+		{
+		    //定义局部变量
+		    triple t;
+		    //从“行”中提取“单词”
+		    std::stringstream word(line);
+		    word>>t.party;
+		    uint64_t num;
+		    while(word>>num)
+		        t.value.push_back(num);
+		    Triple.push_back(t);
+		}
+
+		for(int i=0; i< nP; i++){
+			if(party == stoi(Triple[i].party)){
+				for(int j=0; j< sz; j++) a[j] = Triple[i].value[j];
+			}
+		}
+
+		Triple.clear();
+		memset(line, 0, sizeof(line));
+
+		while(fin2.getline(line,sizeof(line)))
+		{
+		    //定义局部变量
+		    triple t;
+		    //从“行”中提取“单词”
+		    std::stringstream word(line);
+		    word>>t.party;
+		    uint64_t num;
+		    while(word>>num)
+		        t.value.push_back(num);
+		    Triple.push_back(t);
+		}
+
+		for(int i=0; i< nP; i++){
+			if(party == stoi(Triple[i].party)){
+				for(int j=0; j< sz; j++) b[j] = Triple[i].value[j];
+			}
+		}
+
+		Triple.clear();
+		memset(line, 0, sizeof(line));
+
+		while(fin3.getline(line,sizeof(line)))
+		{
+		    //定义局部变量
+		    triple t;
+		    //从“行”中提取“单词”
+		    std::stringstream word(line);
+		    word>>t.party;
+		    uint64_t num;
+		    while(word>>num)
+		        t.value.push_back(num);
+		    Triple.push_back(t);
+		}
+
+		for(int i=0; i< nP; i++){
+			if(party == stoi(Triple[i].party)){
+				for(int j=0; j< sz; j++) c[j] = Triple[i].value[j];
+			}
+		}
+
+		Triple.clear();
+		memset(line, 0, sizeof(line));
+
+		while(fin4.getline(line,sizeof(line)))
+		{
+		    //定义局部变量
+		    triple t;
+		    //从“行”中提取“单词”
+		    std::stringstream word(line);
+		    word>>t.party;
+		    uint64_t num;
+		    while(word>>num)
+		        t.value.push_back(num);
+		    Triple.push_back(t);
+		}
+
+		for(int i=0; i< nP; i++){
+			if(party == stoi(Triple[i].party)){
+				for(int j=0; j< sz; j++) a_t[j] = Triple[i].value[j];
+			}
+		}
+
+		Triple.clear();
+		memset(line, 0, sizeof(line));
+
+		while(fin5.getline(line,sizeof(line)))
+		{
+		    //定义局部变量
+		    triple t;
+		    //从“行”中提取“单词”
+		    std::stringstream word(line);
+		    word>>t.party;
+		    uint64_t num;
+		    while(word>>num)
+		        t.value.push_back(num);
+		    Triple.push_back(t);
+		}
+
+		for(int i=0; i< nP; i++){
+			if(party == stoi(Triple[i].party)){
+				for(int j=0; j< sz; j++) r[j] = Triple[i].value[j];
+			}
+		}
+
+		Triple.clear();
+		memset(line, 0, sizeof(line));
+
+		while(fin6.getline(line,sizeof(line)))
+		{
+		    //定义局部变量
+		    triple t;
+		    //从“行”中提取“单词”
+		    std::stringstream word(line);
+		    word>>t.party;
+		    uint64_t num;
+		    while(word>>num)
+		        t.value.push_back(num);
+		    Triple.push_back(t);
+		}
+
+		for(int i=0; i< nP; i++){
+			if(party == stoi(Triple[i].party)){
+				for(int j=0; j< sz; j++) r_t[j] = Triple[i].value[j];
+			}
+		}
+
+		Triple.clear();
+		memset(line, 0, sizeof(line));
+
+		while(fin_1.getline(line,sizeof(line)))
+		{
+		    //定义局部变量
+		    triple t;
+		    //从“行”中提取“单词”
+		    std::stringstream word(line);
+		    word>>t.party;
+		    uint64_t num;
+		    while(word>>num)
+		        t.value.push_back(num);
+		    Triple.push_back(t);
+		}
+
+		for(int i=0; i< nP; i++){
+			if(party == stoi(Triple[i].party)){
+				for(int j=0; j< sz; j++) mac_a[j] = Triple[i].value[j];
+			}
+		}
+
+		Triple.clear();
+		memset(line, 0, sizeof(line));
+
+		while(fin_2.getline(line,sizeof(line)))
+		{
+		    //定义局部变量
+		    triple t;
+		    //从“行”中提取“单词”
+		    std::stringstream word(line);
+		    word>>t.party;
+		    uint64_t num;
+		    while(word>>num)
+		        t.value.push_back(num);
+		    Triple.push_back(t);
+		}
+
+		for(int i=0; i< nP; i++){
+			if(party == stoi(Triple[i].party)){
+				for(int j=0; j< sz; j++) mac_b[j] = Triple[i].value[j];
+			}
+		}
+
+		Triple.clear();
+		memset(line, 0, sizeof(line));
+
+		while(fin_3.getline(line,sizeof(line)))
+		{
+		    //定义局部变量
+		    triple t;
+		    //从“行”中提取“单词”
+		    std::stringstream word(line);
+		    word>>t.party;
+		    uint64_t num;
+		    while(word>>num)
+		        t.value.push_back(num);
+		    Triple.push_back(t);
+		}
+
+		for(int i=0; i< nP; i++){
+			if(party == stoi(Triple[i].party)){
+				for(int j=0; j< sz; j++) mac_c[j] = Triple[i].value[j];
+			}
+		}
+
+		Triple.clear();
+		memset(line, 0, sizeof(line));
+
+		while(fin_4.getline(line,sizeof(line)))
+		{
+		    //定义局部变量
+		    triple t;
+		    //从“行”中提取“单词”
+		    std::stringstream word(line);
+		    word>>t.party;
+		    uint64_t num;
+		    while(word>>num)
+		        t.value.push_back(num);
+		    Triple.push_back(t);
+		}
+
+		for(int i=0; i< nP; i++){
+			if(party == stoi(Triple[i].party)){
+				for(int j=0; j< sz; j++) mac_a_t[j] = Triple[i].value[j];
+			}
+		}
+
+		Triple.clear();
+		memset(line, 0, sizeof(line));
+
+		while(fin_5.getline(line,sizeof(line)))
+		{
+		    //定义局部变量
+		    triple t;
+		    //从“行”中提取“单词”
+		    std::stringstream word(line);
+		    word>>t.party;
+		    uint64_t num;
+		    while(word>>num)
+		        t.value.push_back(num);
+		    Triple.push_back(t);
+		}
+
+		for(int i=0; i< nP; i++){
+			if(party == stoi(Triple[i].party)){
+				for(int j=0; j< sz; j++) mac_r[j] = Triple[i].value[j];
+			}
+		}
+
+		Triple.clear();
+		memset(line, 0, sizeof(line));
+
+		while(fin_6.getline(line,sizeof(line)))
+		{
+		    //定义局部变量
+		    triple t;
+		    //从“行”中提取“单词”
+		    std::stringstream word(line);
+		    word>>t.party;
+		    uint64_t num;
+		    while(word>>num)
+		        t.value.push_back(num);
+		    Triple.push_back(t);
+		}
+
+		for(int i=0; i< nP; i++){
+			if(party == stoi(Triple[i].party)){
+				for(int j=0; j< sz; j++) mac_r_t[j] = Triple[i].value[j];
+			}
+		}
+
+		Triple.clear();
+		memset(line, 0, sizeof(line));
+	}
 
 	void Online_mul(uint64_t * x, uint64_t * y, uint64_t * mac_x, uint64_t * mac_y, uint64_t * output, uint64_t *output_mac) {
 		uint64_t *d = new uint64_t[sz];
@@ -196,6 +485,7 @@ class MSPDZ { public:
         uint64_t *de = new uint64_t[sz];
         uint64_t *mac_db = new uint64_t[mat_sz];
         uint64_t *mac_de = new uint64_t[mat_sz];
+		uint64_t *mac_f_t = new uint64_t[mat_sz];
         f_t = transform(f, mat_sz);
         db = mat_mult_mod(d, b, mat_sz);
         de = mat_mult_mod(d, e, mat_sz);
@@ -210,37 +500,36 @@ class MSPDZ { public:
 	}
 	
     void mac_check(uint64_t * x, uint64_t * mac_x){
-        int size = mat_sz * mat_sz;
         if(party != 1) {
-			io->send_data(1, x, size);
+			io->send_data(1, x, sz);
 			io->flush(1);
-			io->recv_data(1, x, size);
+			io->recv_data(1, x, sz);
 		} else {
 			uint64_t * tmp[nP+1];
-			for(int i = 1; i <= nP; ++i) tmp[i] = new uint64_t[size];
+			for(int i = 1; i <= nP; ++i) tmp[i] = new uint64_t[sz];
 			vector<future<void>> res;
 			for(int i = 2; i <= nP; ++i) {
 				int party2 = i;
 				res.push_back(pool->enqueue([this, tmp, party2]() {
-					io->recv_data(party2, tmp[party2], size);
+					io->recv_data(party2, tmp[party2], sz);
 				}));
 			}
 			joinNclean(res);
-			for(int i = 0; i < size; ++i)
+			for(int i = 0; i < sz; ++i)
 				for(int j = 2; j <= nP; ++j)
 					tmp[1][i] = add_mod(tmp[1][i] , tmp[j][i]);
             x=tmp[1];
 			for(int i = 2; i <= nP; ++i) {
 				int party2 = i;
 				res.push_back(pool->enqueue([this, x, party2]() {
-					io->send_data(party2, x, size);
+					io->send_data(party2, x, sz);
 					io->flush(party2);
 				}));
 			}
 			joinNclean(res);
 			for(int i = 1; i <= nP; ++i) delete[] tmp[i];
 		}
-        uint64_t * sigma_x = new uint64_t *[mat_sz];
+        uint64_t * sigma_x = new uint64_t[mat_sz];
         sigma_x = mat_vec_mult(x,key,mat_sz);
         for(int i = 0; i < mat_sz; ++i) {
             sigma_x[i] = mod(mac_x[i] - sigma_x[i]);
