@@ -31,7 +31,7 @@ m-spdz.h is the protocol designed in the [paper](https://eprint.iacr.org/2023/19
 
 ## test 
 已实现线上测试
-> g++ test/mul.cpp -o mul
+> g++ -fopenmp test/mul.cpp -o mul -pthread
 
 打开三个线程，分别执行
 > ./mul 1 12345
