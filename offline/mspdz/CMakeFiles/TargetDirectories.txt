@@ -1,0 +1,8 @@
+/home/ztx/SPDZ/mspdz/CMakeFiles/test.dir
+/home/ztx/SPDZ/mspdz/CMakeFiles/edit_cache.dir
+/home/ztx/SPDZ/mspdz/CMakeFiles/rebuild_cache.dir
+/home/ztx/SPDZ/mspdz/vole/CMakeFiles/test_vole_triple_new.dir
+/home/ztx/SPDZ/mspdz/vole/CMakeFiles/test_base_vole.dir
+/home/ztx/SPDZ/mspdz/vole/CMakeFiles/test.dir
+/home/ztx/SPDZ/mspdz/vole/CMakeFiles/edit_cache.dir
+/home/ztx/SPDZ/mspdz/vole/CMakeFiles/rebuild_cache.dir
